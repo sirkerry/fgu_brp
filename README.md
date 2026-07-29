@@ -16,8 +16,8 @@ symlink; these repo folders are git-tracked backups synced with
   Stock BRP has zero `EffectManager` usage anywhere in its own code; this
   wires up the first piece of CoreRPG's Effects system to a BRP mechanic.
   Adds `CHECK` (flat percentage bonus/penalty to Skill, Characteristic, and
-  Power checks) and `ATK` (same, for Attack rolls), both filterable by
-  name.
+  Power checks), `ATK` (same, for Attack rolls), and `DMG` (bonus dice/mod
+  to Damage rolls), all filterable by name.
 
 ## Compatibility
 

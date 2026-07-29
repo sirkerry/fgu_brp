@@ -2,7 +2,7 @@
 
 FGU extension for the official Basic Roleplaying (BRP) ruleset.
 
-Adds two effect keywords:
+Adds three effect keywords:
 
 - `CHECK: <mod>[, <name>]` — flat percentage bonus/penalty to Skill,
   Characteristic, and Power checks (e.g. `CHECK: 10, Spot`, or `CHECK: -20`
@@ -11,8 +11,12 @@ Adds two effect keywords:
   (e.g. `ATK: 10, Sword`). Matches against the weapon's own name and, as a
   fallback, its linked skill's name (e.g. `ATK: 10, Melee Weapons`) — see
   "Weapon attack% is a stale snapshot" below for why the fallback exists.
+- `DMG: <dice/mod>[, <weapon name>]` — bonus dice and/or flat mod to
+  matching Damage rolls (e.g. `DMG: 1d4, Sword` or `DMG: 2`). Source-side
+  only (the attacker's own bonus damage) — a target-side armor/resistance
+  effect is a different, not-yet-built piece.
 
-Both match case-insensitively; brackets around the name also work
+All three match case-insensitively; brackets around the name also work
 (`CHECK: 10 [Spot]`) but comma syntax is the documented form.
 
 ## Why
@@ -23,9 +27,9 @@ CoreRPG Effects list is present on the Combat Tracker (inherited
 scaffolding every CoreRPG ruleset gets), but nothing in BRP ever reads it.
 This is the first piece of CoreRPG's Effects system actually wired up to a
 BRP mechanic — specifically the "Pattern A" checks (Skill, Characteristic,
-and Power rolls, which all share an identical "roll under %" shape) plus
-Attack rolls, which turn out to share the same shape under a different
-field name.
+and Power rolls, which all share an identical "roll under %" shape),
+Attack rolls (which turn out to share the same shape under a different
+field name), and Damage rolls (a genuinely different shape — see below).
 
 ## How It Works
 
@@ -41,11 +45,20 @@ the `CHECK`/`ATK` effect bonus, is applied inline in `getRoll()` itself,
 matching the ruleset's own existing pattern rather than introducing a new
 pipeline stage that doesn't otherwise exist here.
 
-`scripts/manager_brp_effects.lua` wraps all four `getRoll` functions
+`ActionDamage.getRoll` (`manager_action_damage.lua`) is a genuinely
+different shape: no percentage/target number and no
+`ModifierStack.getStack()` call anywhere in that file, just a flat dice
+pool (`rRoll.aDice`) and flat mod (`rRoll.nMod`) built by summing
+`rAction.clauses`. `DMG` adds directly to that dice pool/mod instead.
+
+`scripts/manager_brp_effects.lua` wraps all five `getRoll` functions
 (confirmed the only definition site for each, so direct wraps are safe).
 Each roll type already exposes an identifying field on `rAction` (used for
 its own chat text), reused here as the effect filter: `rAction.label`
-(skill/power/weapon name) and/or `rAction.stat` (characteristic name).
+(skill/power/weapon name) and/or `rAction.stat` (characteristic name). Both
+PC and NPC damage-roll scripts set `rAction.label` to the weapon's name
+even though `manager_action_damage.lua` itself never reads that field for
+anything.
 
 **Weapon attack% is a stale snapshot, not a live total.**
 `char_weapon.lua`'s `updateAttack()` looks up a weapon's linked skill by
@@ -77,8 +90,9 @@ sides.
 
 - Official Basic Roleplaying (BRP) ruleset
 - Purely additive — no stock ruleset file is edited
-- Doesn't touch Damage rolls or Initiative — those are separate choke
-  points with their own shapes, not yet covered
+- Doesn't touch target-side armor/resistance (damage reduction) or
+  Initiative — those are separate choke points with their own shapes, not
+  yet covered
 
 ## Installation
 

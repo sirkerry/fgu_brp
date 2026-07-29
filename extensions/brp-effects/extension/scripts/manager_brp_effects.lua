@@ -18,6 +18,11 @@
 --		against the weapon's own name (e.g. "Sword") and, as a fallback,
 --		its linked skill's name (e.g. "Melee Weapons") - see the note on
 --		weapon attack% below for why the fallback exists.
+--	DMG: <dice/mod>[, <weapon name>]
+--		Bonus dice and/or flat mod to matching Damage rolls (e.g.
+--		"DMG: 1d4, Sword" or "DMG: 2"). Matches against the weapon's own
+--		name only - unlike ATK, damage isn't derived from a skill total,
+--		so there's no equivalent fallback to make.
 --
 -- ActionSkill.getRoll, ActionAbility.getRoll, and ActionPowers.getRoll
 -- (manager_action_skill.lua, manager_action_ability.lua,
@@ -50,6 +55,16 @@
 -- or ATK-tagged effect can still target attacks by their underlying skill
 -- name even though the roll itself never touches that skill.
 --
+-- ActionDamage.getRoll (manager_action_damage.lua) is a genuinely different
+-- shape from the four above: no percentage/target number and no
+-- ModifierStack.getStack() call anywhere in that file, just a flat dice
+-- pool (rRoll.aDice) and flat mod (rRoll.nMod) built by summing
+-- rAction.clauses. DMG adds directly to that dice pool/mod, the same way
+-- CHECK/ATK's own dice-bonus path already works. Both PC and NPC damage-
+-- roll scripts set rAction.label to the weapon's name (used here as the
+-- filter), even though manager_action_damage.lua itself never reads that
+-- field for anything.
+--
 -- Matching is done by hand rather than via EffectManager.getBonusMod's own
 -- tFilter option: CoreRPG's tag parser keeps a bracketed filter's brackets
 -- literally in the parsed text (confirmed via direct source read of
@@ -64,7 +79,7 @@
 -- folded on both sides.
 --
 
-local _fnOrigSkillGetRoll, _fnOrigAbilityGetRoll, _fnOrigPowersGetRoll, _fnOrigAttackGetRoll;
+local _fnOrigSkillGetRoll, _fnOrigAbilityGetRoll, _fnOrigPowersGetRoll, _fnOrigAttackGetRoll, _fnOrigDamageGetRoll;
 
 function onInit()
 	_fnOrigSkillGetRoll = ActionSkill.getRoll;
@@ -78,6 +93,9 @@ function onInit()
 
 	_fnOrigAttackGetRoll = ActionAttack.getRoll;
 	ActionAttack.getRoll = attackGetRoll;
+
+	_fnOrigDamageGetRoll = ActionDamage.getRoll;
+	ActionDamage.getRoll = damageGetRoll;
 end
 
 function skillGetRoll(rActor, rAction)
@@ -101,6 +119,12 @@ end
 function attackGetRoll(rActor, rAction)
 	local rRoll = _fnOrigAttackGetRoll(rActor, rAction);
 	applyAttackEffect(rActor, rRoll, rAction);
+	return rRoll;
+end
+
+function damageGetRoll(rActor, rAction)
+	local rRoll = _fnOrigDamageGetRoll(rActor, rAction);
+	applyDamageEffect(rActor, rRoll, rAction);
 	return rRoll;
 end
 
@@ -201,5 +225,33 @@ function applyAttackEffect(rActor, rRoll, rAction)
 	if nBonus ~= 0 then
 		rRoll.nBase = rRoll.nBase + nBonus;
 		rRoll.sDesc = (rRoll.sDesc or "") .. string.format(" [ATK %+d]", nBonus);
+	end
+end
+
+-- Unlike CHECK/ATK, tracks whether anything matched (bMatched) rather than
+-- just checking nBonus ~= 0, since a purely dice-based DMG effect (e.g.
+-- "DMG: 1d4, Sword", no flat mod) would otherwise leave nBonus at 0 and
+-- skip the description suffix even though dice were added.
+function applyDamageEffect(rActor, rRoll, rAction)
+	local tNames = {};
+	if (rAction.label or "") ~= "" then
+		table.insert(tNames, normalizeEffectText(rAction.label));
+	end
+
+	local nBonus = 0;
+	local bMatched = false;
+	for _, tCompData in ipairs(EffectManager.getCompsDataByTag(rActor, "DMG")) do
+		if matchesCheckFilter(tCompData.remainder, tNames) then
+			bMatched = true;
+			for _, vDie in ipairs(tCompData.dice) do
+				table.insert(rRoll.aDice, vDie);
+			end
+			nBonus = nBonus + (tCompData.mod or 0);
+		end
+	end
+
+	if bMatched then
+		rRoll.nMod = (rRoll.nMod or 0) + nBonus;
+		rRoll.sDesc = (rRoll.sDesc or "") .. string.format(" [DMG %+d]", nBonus);
 	end
 end
