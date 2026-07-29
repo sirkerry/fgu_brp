@@ -2,7 +2,7 @@
 
 FGU extension for the official Basic Roleplaying (BRP) ruleset.
 
-Adds three effect keywords:
+Adds four effect keywords:
 
 - `CHECK: <mod>[, <name>]` — flat percentage bonus/penalty to Skill,
   Characteristic, and Power checks (e.g. `CHECK: 10, Spot`, or `CHECK: -20`
@@ -15,9 +15,12 @@ Adds three effect keywords:
   matching Damage rolls (e.g. `DMG: 1d4, Sword` or `DMG: 2`). Source-side
   only (the attacker's own bonus damage) — a target-side armor/resistance
   effect is a different, not-yet-built piece.
+- `INIT: <mod>` — flat bonus/penalty to Initiative. No name filter;
+  initiative isn't rolled "for" anything, so every active `INIT` effect on
+  the actor just adds to the total.
 
-All three match case-insensitively; brackets around the name also work
-(`CHECK: 10 [Spot]`) but comma syntax is the documented form.
+`CHECK`/`ATK`/`DMG` match case-insensitively; brackets around the name
+also work (`CHECK: 10 [Spot]`) but comma syntax is the documented form.
 
 ## Why
 
@@ -29,7 +32,8 @@ This is the first piece of CoreRPG's Effects system actually wired up to a
 BRP mechanic — specifically the "Pattern A" checks (Skill, Characteristic,
 and Power rolls, which all share an identical "roll under %" shape),
 Attack rolls (which turn out to share the same shape under a different
-field name), and Damage rolls (a genuinely different shape — see below).
+field name), Damage rolls (a genuinely different shape — see below), and
+Initiative (the simplest of the five — see below).
 
 ## How It Works
 
@@ -51,8 +55,20 @@ different shape: no percentage/target number and no
 pool (`rRoll.aDice`) and flat mod (`rRoll.nMod`) built by summing
 `rAction.clauses`. `DMG` adds directly to that dice pool/mod instead.
 
-`scripts/manager_brp_effects.lua` wraps all five `getRoll` functions
-(confirmed the only definition site for each, so direct wraps are safe).
+`CombatManager2.getEntryInitRecord` (`manager_combat2.lua`) builds
+`tInit.nMod` from DEX and hands off `tInit.fnRollRandom` (BRP's own
+`rollRandomInit`: `math.random(10) + tInit.nMod`) to CoreRPG's generic
+initiative pipeline, which writes the result straight to `initresult`.
+This never touches the FGU dice-roll pipeline at all — no `rRoll.aDice`,
+no `ActionsManager` — just a synchronous Lua computation, so `INIT` is a
+flat `nMod`-style addition with no dice concept. It also skips the
+hand-rolled name matching entirely (see below): there's no per-roll name
+to filter by, so the plain `EffectManager.getBonusMod(rActor, "INIT")` (no
+`tFilter`) is safe here.
+
+`scripts/manager_brp_effects.lua` wraps all four `getRoll` functions plus
+`getEntryInitRecord` (confirmed the only definition site for each, so
+direct wraps are safe).
 Each roll type already exposes an identifying field on `rAction` (used for
 its own chat text), reused here as the effect filter: `rAction.label`
 (skill/power/weapon name) and/or `rAction.stat` (characteristic name). Both
@@ -90,9 +106,8 @@ sides.
 
 - Official Basic Roleplaying (BRP) ruleset
 - Purely additive — no stock ruleset file is edited
-- Doesn't touch target-side armor/resistance (damage reduction) or
-  Initiative — those are separate choke points with their own shapes, not
-  yet covered
+- Doesn't touch target-side armor/resistance (damage reduction) — a
+  separate choke point with its own shape, not yet covered
 
 ## Installation
 

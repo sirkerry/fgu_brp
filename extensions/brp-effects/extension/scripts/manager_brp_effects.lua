@@ -23,6 +23,11 @@
 --		"DMG: 1d4, Sword" or "DMG: 2"). Matches against the weapon's own
 --		name only - unlike ATK, damage isn't derived from a skill total,
 --		so there's no equivalent fallback to make.
+--	INIT: <mod>
+--		Flat bonus/penalty to Initiative. No name filter - initiative
+--		isn't rolled "for" anything the way a skill/weapon roll is, so
+--		there's nothing meaningful to filter by; every active INIT effect
+--		on the actor just adds to the total.
 --
 -- ActionSkill.getRoll, ActionAbility.getRoll, and ActionPowers.getRoll
 -- (manager_action_skill.lua, manager_action_ability.lua,
@@ -78,8 +83,21 @@
 -- own remainder tags are compared here with brackets stripped and case
 -- folded on both sides.
 --
+-- CombatManager2.getEntryInitRecord (manager_combat2.lua) builds
+-- tInit.nMod from DEX and hands off tInit.fnRollRandom (BRP's own
+-- rollRandomInit: math.random(10) + tInit.nMod) to CoreRPG's generic
+-- initiative pipeline (rollStandardEntryInit -> helperRollEntryInit ->
+-- helperRollRandomInit), which writes the result straight to "initresult".
+-- This never touches the FGU dice-roll pipeline at all (no rRoll.aDice,
+-- no ActionsManager) - just a synchronous Lua computation - so INIT is a
+-- flat rRoll.nMod-style addition with no dice concept. INIT also skips the
+-- hand-rolled matching used above entirely: there's no per-roll name to
+-- filter by, so the plain EffectManager.getBonusMod(rActor, "INIT") (no
+-- tFilter) is safe here - the case-sensitivity bug above only bites once a
+-- tFilter is involved.
+--
 
-local _fnOrigSkillGetRoll, _fnOrigAbilityGetRoll, _fnOrigPowersGetRoll, _fnOrigAttackGetRoll, _fnOrigDamageGetRoll;
+local _fnOrigSkillGetRoll, _fnOrigAbilityGetRoll, _fnOrigPowersGetRoll, _fnOrigAttackGetRoll, _fnOrigDamageGetRoll, _fnOrigGetEntryInitRecord;
 
 function onInit()
 	_fnOrigSkillGetRoll = ActionSkill.getRoll;
@@ -96,6 +114,9 @@ function onInit()
 
 	_fnOrigDamageGetRoll = ActionDamage.getRoll;
 	ActionDamage.getRoll = damageGetRoll;
+
+	_fnOrigGetEntryInitRecord = CombatManager2.getEntryInitRecord;
+	CombatManager2.getEntryInitRecord = getEntryInitRecord;
 end
 
 function skillGetRoll(rActor, rAction)
@@ -126,6 +147,14 @@ function damageGetRoll(rActor, rAction)
 	local rRoll = _fnOrigDamageGetRoll(rActor, rAction);
 	applyDamageEffect(rActor, rRoll, rAction);
 	return rRoll;
+end
+
+function getEntryInitRecord(nodeEntry)
+	local tInit = _fnOrigGetEntryInitRecord(nodeEntry);
+	if tInit then
+		applyInitEffect(nodeEntry, tInit);
+	end
+	return tInit;
 end
 
 -- Strips brackets/parens (CoreRPG's tag parser keeps them literally in the
@@ -253,5 +282,19 @@ function applyDamageEffect(rActor, rRoll, rAction)
 	if bMatched then
 		rRoll.nMod = (rRoll.nMod or 0) + nBonus;
 		rRoll.sDesc = (rRoll.sDesc or "") .. string.format(" [DMG %+d]", nBonus);
+	end
+end
+
+-- No name filter: initiative isn't rolled for anything, so the plain
+-- getBonusMod (no tFilter) is safe here.
+function applyInitEffect(nodeEntry, tInit)
+	local rActor = ActorManager.resolveActor(nodeEntry);
+	if not rActor then
+		return;
+	end
+
+	local nBonus = EffectManager.getBonusMod(rActor, "INIT");
+	if nBonus ~= 0 then
+		tInit.nMod = (tInit.nMod or 0) + nBonus;
 	end
 end
