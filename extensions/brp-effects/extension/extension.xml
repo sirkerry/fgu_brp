@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root version="4.1">
+	<properties>
+		<name>Feature: BRP Check Effects</name>
+		<version>1.0</version>
+		<author>Kerry Harrison (sirkerry)</author>
+		<description>Adds a CHECK effect keyword that applies a flat percentage bonus/penalty to Skill, Characteristic, and Power checks, filterable by name. Stock Basic Roleplaying has zero EffectManager usage anywhere in its own code - this is the first piece of CoreRPG's Effects system actually wired up to a BRP mechanic.</description>
+		<ruleset>
+			<name>Basic Roleplaying</name>
+		</ruleset>
+		<loadorder>40</loadorder>
+	</properties>
+
+	<announcement text="BRP Check Effects - Version 1.0 by sirkerry" font="emotefont" />
+
+	<base>
+		<script name="BRPEffectsManager" file="scripts/manager_brp_effects.lua" />
+	</base>
+</root>

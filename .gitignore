@@ -1,0 +1,4 @@
+backups/
+dist/
+*.ext
+*.mod
