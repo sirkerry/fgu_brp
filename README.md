@@ -15,8 +15,9 @@ symlink; these repo folders are git-tracked backups synced with
 - **[brp-effects](extensions/brp-effects/README.md)** — Check Effects.
   Stock BRP has zero `EffectManager` usage anywhere in its own code; this
   wires up the first piece of CoreRPG's Effects system to a BRP mechanic.
-  Adds a `CHECK` effect keyword: a flat percentage bonus/penalty to Skill,
-  Characteristic, and Power checks, filterable by name.
+  Adds `CHECK` (flat percentage bonus/penalty to Skill, Characteristic, and
+  Power checks) and `ATK` (same, for Attack rolls), both filterable by
+  name.
 
 ## Compatibility
 
