@@ -17,7 +17,8 @@ symlink; these repo folders are git-tracked backups synced with
   wires up the first piece of CoreRPG's Effects system to a BRP mechanic.
   Adds `CHECK` (flat percentage bonus/penalty to Skill, Characteristic, and
   Power checks), `ATK` (same, for Attack rolls), `DMG` (bonus dice/mod to
-  Damage rolls), and `INIT` (flat bonus/penalty to Initiative).
+  Damage rolls), `INIT` (flat bonus/penalty to Initiative), and `ARMOR`
+  (flat damage reduction, read from the target's own effects).
 
 ## Compatibility
 

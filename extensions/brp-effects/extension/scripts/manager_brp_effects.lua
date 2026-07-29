@@ -28,6 +28,15 @@
 --		isn't rolled "for" anything the way a skill/weapon roll is, so
 --		there's nothing meaningful to filter by; every active INIT effect
 --		on the actor just adds to the total.
+--	ARMOR: <mod>
+--		Flat damage reduction, floored at 0, applied to incoming damage
+--		on whichever actor carries this effect (unlike the other four
+--		keywords, this reads the TARGET's effect list, not the source's).
+--		No name filter - BRP has no damage-type/resistance concept to
+--		filter by (confirmed via direct source read), so this is a flat
+--		"armor value" applied to everything. Stacks with, and applies
+--		before, the optional Hit Locations rule's own per-location AP
+--		subtraction.
 --
 -- ActionSkill.getRoll, ActionAbility.getRoll, and ActionPowers.getRoll
 -- (manager_action_skill.lua, manager_action_ability.lua,
@@ -96,8 +105,18 @@
 -- tFilter) is safe here - the case-sensitivity bug above only bites once a
 -- tFilter is involved.
 --
+-- ActionDamage.applyDamage (manager_action_damage.lua, called from
+-- handleApplyDamage, its only call site) is where nTotal actually gets
+-- subtracted from "wounds" - the first choke point in this whole extension
+-- that runs on the TARGET's effects, not the source's. Wrapped the same
+-- way as everything above: compute the reduction and adjust nTotal before
+-- calling through to the original, so every downstream calculation inside
+-- it (wounds, the optional Hit Locations AP subtraction, the displayed
+-- total in the confirmation chat message) automatically reflects the
+-- post-armor number with no further changes needed.
+--
 
-local _fnOrigSkillGetRoll, _fnOrigAbilityGetRoll, _fnOrigPowersGetRoll, _fnOrigAttackGetRoll, _fnOrigDamageGetRoll, _fnOrigGetEntryInitRecord;
+local _fnOrigSkillGetRoll, _fnOrigAbilityGetRoll, _fnOrigPowersGetRoll, _fnOrigAttackGetRoll, _fnOrigDamageGetRoll, _fnOrigGetEntryInitRecord, _fnOrigApplyDamage;
 
 function onInit()
 	_fnOrigSkillGetRoll = ActionSkill.getRoll;
@@ -117,6 +136,9 @@ function onInit()
 
 	_fnOrigGetEntryInitRecord = CombatManager2.getEntryInitRecord;
 	CombatManager2.getEntryInitRecord = getEntryInitRecord;
+
+	_fnOrigApplyDamage = ActionDamage.applyDamage;
+	ActionDamage.applyDamage = applyDamage;
 end
 
 function skillGetRoll(rActor, rAction)
@@ -155,6 +177,11 @@ function getEntryInitRecord(nodeEntry)
 		applyInitEffect(nodeEntry, tInit);
 	end
 	return tInit;
+end
+
+function applyDamage(sSourceNode, sTargetNode, bSecret, sDamage, nTotal, sRange, sLocationNode)
+	nTotal = applyArmorEffect(sTargetNode, nTotal);
+	return _fnOrigApplyDamage(sSourceNode, sTargetNode, bSecret, sDamage, nTotal, sRange, sLocationNode);
 end
 
 -- Strips brackets/parens (CoreRPG's tag parser keeps them literally in the
@@ -297,4 +324,24 @@ function applyInitEffect(nodeEntry, tInit)
 	if nBonus ~= 0 then
 		tInit.nMod = (tInit.nMod or 0) + nBonus;
 	end
+end
+
+-- Reads the TARGET's own ARMOR effects (not the source's, unlike every
+-- other keyword above) and subtracts the total from incoming damage,
+-- floored at 0 the same way the existing Hit Locations AP subtraction
+-- already floors its own reduction just below this.
+function applyArmorEffect(sTargetNode, nTotal)
+	local rTarget = ActorManager.resolveActor(sTargetNode);
+	if not rTarget then
+		return nTotal;
+	end
+
+	local nReduction = EffectManager.getBonusMod(rTarget, "ARMOR");
+	if nReduction ~= 0 then
+		nTotal = nTotal - nReduction;
+		if nTotal < 0 then
+			nTotal = 0;
+		end
+	end
+	return nTotal;
 end
