@@ -1,5 +1,5 @@
 --
--- BRP Check Effects
+-- BRP Effects
 --
 -- Stock Basic Roleplaying has zero EffectManager usage anywhere in its own
 -- code (confirmed via direct source read) - the CoreRPG Effects list on

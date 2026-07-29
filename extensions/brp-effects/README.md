@@ -1,4 +1,4 @@
-# BRP Check Effects
+# BRP Effects
 
 FGU extension for the official Basic Roleplaying (BRP) ruleset.
 
