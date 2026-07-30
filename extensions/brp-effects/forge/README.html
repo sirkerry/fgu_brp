@@ -1,0 +1,22 @@
+<h1>BRP Effects</h1>
+
+<p>FGU extension for the official Basic Roleplaying (BRP) ruleset.</p>
+
+<p>Stock BRP has zero <code>EffectManager</code> usage anywhere in its own code. This wires up five effect keywords covering every roll type BRP has:</p>
+
+<ul>
+  <li><code>CHECK: &lt;mod&gt;[, &lt;name&gt;]</code> &mdash; flat percentage bonus/penalty to Skill, Characteristic, and Power checks (e.g. <code>CHECK: 10, Spot</code>, or <code>CHECK: -20</code> with no filter to apply to every check).</li>
+  <li><code>ATK: &lt;mod&gt;[, &lt;name&gt;]</code> &mdash; flat percentage bonus/penalty to Attack rolls (e.g. <code>ATK: 10, Sword</code>). Matches against the weapon's own name and, as a fallback, its linked skill's name (e.g. <code>ATK: 10, Melee Weapons</code>), since a weapon's attack% is a stale snapshot of its linked skill's total and never sees a <code>CHECK</code> bonus on that skill otherwise.</li>
+  <li><code>DMG: &lt;dice/mod&gt;[, &lt;weapon name&gt;]</code> &mdash; bonus dice and/or flat mod to matching Damage rolls (e.g. <code>DMG: 1d4, Sword</code> or <code>DMG: 2</code>). Source-side only (the attacker's own bonus damage).</li>
+  <li><code>INIT: &lt;mod&gt;</code> &mdash; flat bonus/penalty to Initiative. No name filter; initiative isn't rolled &quot;for&quot; anything, so every active <code>INIT</code> effect on the actor just adds to the total.</li>
+  <li><code>ARMOR: &lt;mod&gt;</code> &mdash; flat damage reduction, floored at 0, applied to incoming damage. Unlike the other four, this is read from the <strong>target's</strong> effect list, not the source's &mdash; put it on whichever character/NPC should resist damage. No name filter; BRP has no damage-type/resistance concept to filter by, so it applies to all incoming damage. Stacks with, and applies before, the optional Hit Locations rule's own per-location AP subtraction.</li>
+</ul>
+
+<p><code>CHECK</code>/<code>ATK</code>/<code>DMG</code> match case-insensitively; brackets around the name also work (<code>CHECK: 10 [Spot]</code>) but comma syntax is the documented form.</p>
+
+<h2>Compatibility</h2>
+
+<ul>
+  <li>Official Basic Roleplaying (BRP) ruleset</li>
+  <li>Purely additive &mdash; no stock ruleset file is edited</li>
+</ul>

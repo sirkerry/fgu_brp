@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="768" height="768" viewBox="0 0 768 768" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>BRP Effects icon</title>
+  <desc>A heraldic shield in dark steel with a large BRP emblem and EFFECTS branding</desc>
+  <style>
+    .shield-body { fill: #2a2d35; stroke: #c9a84c; stroke-width: 6; }
+    .shield-inner { fill: none; stroke: #c9a84c; stroke-width: 3; opacity: 0.5; }
+    .sub-text { font-family: serif; font-weight: 400; fill: #a08030; }
+    .rivet { fill: #c9a84c; }
+  </style>
+  <g transform="translate(384, 384)">
+    <!-- Shield -->
+    <path class="shield-body" d="M0,-300 L225,-228 L255,42 Q255,210 0,300 Q-255,210 -255,42 L-225,-228 Z"/>
+    <path class="shield-inner" d="M0,-264 L192,-198 L219,36 Q219,180 0,264 Q-219,180 -219,36 L-192,-198 Z"/>
+    <line x1="-219" y1="-30" x2="219" y2="-30" stroke="#c9a84c" stroke-width="2" opacity="0.4"/>
+
+    <!-- Rivets -->
+    <circle class="rivet" cx="0" cy="-285" r="9"/>
+    <circle class="rivet" cx="-200" cy="-218" r="9"/>
+    <circle class="rivet" cx="200" cy="-218" r="9"/>
+    <circle class="rivet" cx="-238" cy="42" r="9"/>
+    <circle class="rivet" cx="238" cy="42" r="9"/>
+    <circle class="rivet" cx="0" cy="285" r="9"/>
+
+    <!-- BRP emblem -->
+    <text x="0" y="-10" font-family="serif" font-weight="700" font-size="170" fill="#e8c96a" text-anchor="middle">BRP</text>
+
+    <!-- Text -->
+    <text class="sub-text" x="0" y="170" font-size="40" text-anchor="middle" letter-spacing="8">EFFECTS</text>
+  </g>
+</svg>
